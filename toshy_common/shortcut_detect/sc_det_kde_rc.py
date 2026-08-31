@@ -15,7 +15,7 @@ Value grammar handled (verified against real files):
 Callers supply the section name(s) and an action-name -> slot-name map;
 this module knows the file format, not any feature domain.
 """
-__version__ = '20260803'
+__version__ = '20260831'
 
 import os
 
@@ -57,12 +57,15 @@ def parse_kde_shortcut_value(value_str: str) -> 'tuple[str, str | None]':
     return (STATUS_RESOLVED, current_field)
 
 
-def read_kde_component(section_names, action_slot_dct: dict) -> dict:
+def read_kde_component(section_names, action_slot_dct: dict,
+                        plasma_maj_ver=None) -> dict:
     """Read one component's shortcuts from kglobalshortcutsrc.
 
     section_names: iterable of exact section header strings to accept
     (e.g. '[org.kde.spectacle.desktop]' and its '[services][...]' twin).
     action_slot_dct: config key name -> slot name.
+    plasma_maj_ver: Plasma major (int or digit string) selecting Qt 5 vs
+    Qt 6 key naming; None falls back to KDE_SESSION_VERSION, then 6.
 
     Returns {slot: (status, combo, raw, note)}. Returns {} when the file
     or all sections are absent -- the common case for untouched
@@ -105,7 +108,7 @@ def read_kde_component(section_names, action_slot_dct: dict) -> dict:
             results_dct[slot_name] = (STATUS_DISABLED, None, value_str.strip(), '')
             continue
 
-        combo_str = normalize_kde_accel(raw_accel)
+        combo_str = normalize_kde_accel(raw_accel, plasma_maj_ver)
         if combo_str is None:
             error(f"SC_DET: Could not parse KDE shortcut for '{action_name}': "
                     f'{raw_accel!r} (slot falls back to defaults)', ctx='DT')

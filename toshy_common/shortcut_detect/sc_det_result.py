@@ -7,9 +7,10 @@ source constants, the SlotResult container, and the generic resolution
 tiering (live settings over static defaults, with explicitly-disabled
 shortcuts respected rather than falling through).
 """
-__version__ = '20260803'
+__version__ = '20260831'
 
-from toshy_common.logger import debug
+from toshy_common.logger import debug, error
+from toshy_common.shortcut_detect.sc_det_keynames import BARE_MODIFIER_KEYNAMES_SET
 
 
 # Per-slot resolution status values.
@@ -60,6 +61,36 @@ def log_resolution(prefix_str: str, domain_label_str: str, results_dct: dict,
 
     for slot_name, result in results_dct.items():
         debug(f'{prefix_str}:   {slot_name}: {result!r}', ctx='DT')
+
+
+def validate_combos(results_dct: dict, combo_fn, prefix_str: str) -> dict:
+    """Run every resolved combo through the keymapper's own combo parser
+    (the config's C) and downgrade any it rejects to STATUS_UNRESOLVED,
+    loudly. This is the authoritative membership check against the Key
+    enum, placed in the one layer that has access to it via injection
+    (toshy_common never imports xwaykeyz). It also covers combos that
+    never passed through a reader: defaults tables and user overrides.
+
+    Modifier-only combos ('Super') are skipped: builders emit those as a
+    bare Key tap, and C() legitimately rejects them.
+
+    Mutates and returns results_dct."""
+    for slot_name, result in results_dct.items():
+        if result.status != STATUS_RESOLVED or not result.combo:
+            continue
+        if result.combo in BARE_MODIFIER_KEYNAMES_SET:
+            continue
+        try:
+            combo_fn(result.combo)
+        except (KeyError, ValueError) as exc:
+            error(f'{prefix_str}: Keymapper rejected combo {result.combo!r} for slot '
+                    f"'{slot_name}' ({type(exc).__name__}: {exc}); slot downgraded "
+                    'to unresolved. Please report this so the key name table '
+                    'can be extended.', ctx='DT')
+            results_dct[slot_name] = SlotResult(
+                STATUS_UNRESOLVED, source=result.source, raw=result.raw,
+                note=f'combo {result.combo!r} rejected by keymapper')
+    return results_dct
 
 
 def resolve_slot_tiers(slot_names, live_dct: dict, table_dct: dict,

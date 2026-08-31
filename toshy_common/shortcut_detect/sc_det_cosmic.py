@@ -15,11 +15,12 @@ against cosmic-settings-daemon's Makefile and cosmic-settings source,
 The user 'custom' layer is searched first (user rebinds land there),
 then 'defaults' (user file shadowing the system file when present).
 """
-__version__ = '20260805'
+__version__ = '20260831'
 
 import os
 
 from toshy_common.shortcut_detect.sc_det_result import STATUS_RESOLVED
+from toshy_common.shortcut_detect.sc_det_keynames import keyname_from_keysym
 from toshy_common.shortcut_detect.sc_det_cosmic_rgx import COSMIC_BINDING_ENTRY_rgx
 
 
@@ -29,18 +30,6 @@ _SHORTCUTS_REL_PATH = os.path.join(
 # RON modifier name -> xwaykeyz combo modifier, in canonical order.
 _MOD_XLAT_DCT = {'Shift': 'Shift', 'Ctrl': 'C', 'Alt': 'Alt', 'Super': 'Super'}
 _MOD_ORDER_LST = ['Shift', 'C', 'Alt', 'Super']
-
-# RON key token -> combo key name, where straight capitalization is not
-# enough. Extend as real bindings surface.
-_KEY_XLAT_DCT = {
-    'space':    'Space',
-    'Escape':   'Esc',
-    'Return':   'Enter',
-    'comma':    'Comma',
-    'period':   'Dot',
-    'slash':    'Slash',
-}
-
 
 def _shortcuts_file_texts(config_home=None, system_share=None) -> 'list[str]':
     """Layered shortcut file contents, highest priority first: user
@@ -90,9 +79,11 @@ def _entry_to_combo(mods_str: str, key_str) -> 'str | None':
             return combo_mods_lst[0]
         return None         # multi-modifier chord with no key: unsupported
 
-    key_name = _KEY_XLAT_DCT.get(key_str)
+    # RON key tokens are xkb keysym names (with or without XF86 prefix);
+    # anything without a known xwaykeyz Key is refused, not guessed.
+    key_name = keyname_from_keysym(key_str)
     if key_name is None:
-        key_name = key_str.capitalize() if len(key_str) > 1 else key_str.upper()
+        return None
     if not combo_mods_lst:
         return key_name
     return '-'.join(combo_mods_lst) + '-' + key_name

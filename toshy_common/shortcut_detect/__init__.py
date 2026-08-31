@@ -23,6 +23,7 @@ Internal module layout:
     __main__.py          generic detection check CLI (toshy-detector-check)
     sc_det_accel_rgx.py    compiled regex patterns for accel parsing
     sc_det_accel.py        KDE/GTK accelerator -> combo normalization
+    sc_det_keynames.py     DE key name -> xwaykeyz Key name tables/lookups
     sc_det_kde_rc.py       kglobalshortcutsrc component reader mechanics
     sc_det_gsettings.py    gsettings schema family reader mechanics
     sc_det_xfconf.py       xfconf shortcut XML reader mechanics
@@ -30,7 +31,7 @@ Internal module layout:
     sc_det_fallback.py     command fallback output callable factory
     sc_det_diag.py         recording API + literal keymap renderer (CLI)
 """
-__version__ = '20260803'
+__version__ = '20260831'
 
 from toshy_common.shortcut_detect.sc_det_accel import (
     normalize_gtk_accel,
@@ -46,6 +47,10 @@ from toshy_common.shortcut_detect.sc_det_kde_rc import (
     parse_kde_shortcut_value,
     read_kde_component,
 )
+from toshy_common.shortcut_detect.sc_det_keynames import (
+    keyname_from_kde_name,
+    keyname_from_keysym,
+)
 from toshy_common.shortcut_detect.sc_det_result import (
     STATUS_DISABLED,
     STATUS_RESOLVED,
@@ -57,6 +62,7 @@ from toshy_common.shortcut_detect.sc_det_result import (
     SlotResult,
     log_resolution,
     resolve_slot_tiers,
+    validate_combos,
 )
 from toshy_common.shortcut_detect.sc_det_xfconf import read_merged_accel_commands
 
