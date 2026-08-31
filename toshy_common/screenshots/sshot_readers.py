@@ -16,7 +16,7 @@ caller falls through to static defaults for those slots. STATUS_DISABLED
 is a *successful* read of an explicitly disabled shortcut and must NOT
 fall through to defaults.
 """
-__version__ = '20260803'
+__version__ = '20260831'
 
 from toshy_common.logger import error
 from toshy_common.screenshots.sshot_cmd_rgx import (
@@ -77,9 +77,11 @@ _KDE_CLIPBOARD_MIRROR_DCT = {
 _KDE_MIRROR_NOTE = 'mirrors file slot; capture destination governed by Spectacle settings'
 
 
-def read_kde() -> dict:
-    """Read Spectacle shortcuts, mirroring clipboard slots from file slots."""
-    results_dct = read_kde_component(_KDE_SECTION_NAMES_LST, _KDE_ACTION_SLOT_DCT)
+def read_kde(de_maj_ver=None) -> dict:
+    """Read Spectacle shortcuts, mirroring clipboard slots from file slots.
+    de_maj_ver is the Plasma major, needed for Qt 5 vs 6 key naming."""
+    results_dct = read_kde_component(
+        _KDE_SECTION_NAMES_LST, _KDE_ACTION_SLOT_DCT, plasma_maj_ver=de_maj_ver)
 
     for clip_slot, file_slot in _KDE_CLIPBOARD_MIRROR_DCT.items():
         if file_slot not in results_dct:

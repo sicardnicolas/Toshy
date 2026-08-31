@@ -29,7 +29,7 @@ in one keymap per arrangement: the modmaps make them context-disjoint.
 Input primary = input_switch_last where the DE offers it (KDE, matching
 macOS), else input_switch_next; secondary = next-after-last, or prev.
 """
-__version__ = '20260805'
+__version__ = '20260831'
 
 from toshy_common.logger import debug
 from toshy_common.spotlight_input.spli_defaults import (
@@ -39,7 +39,10 @@ from toshy_common.spotlight_input.spli_defaults import (
     SLOT_LAUNCHER_UI,
 )
 from toshy_common.spotlight_input.spli_resolver import resolve_outputs
-from toshy_common.shortcut_detect import STATUS_RESOLVED
+from toshy_common.shortcut_detect import (
+    STATUS_RESOLVED,
+    validate_combos,
+)
 
 
 def _require(name_str, config_globals_dct):
@@ -73,7 +76,10 @@ def setup_spotlight_input_keymaps(config_globals_dct: dict, when=None,
             'provided namespace. Pass the config globals() as the first argument.')
 
     if results_dct is None:
-        results_dct = resolve_outputs(desktop_env, de_maj_ver)
+        results_dct = resolve_outputs(desktop_env, de_maj_ver, combo_fn=C)
+    else:
+        # Pre-resolved results (diagnostics path) have not met C() yet.
+        validate_combos(results_dct, C, 'SPOTL')
 
     def _combo(slot_name):
         result = results_dct.get(slot_name)

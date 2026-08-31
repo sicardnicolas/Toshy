@@ -5,7 +5,7 @@ toshy_common/spotlight_input/spli_readers.py
 Per-DE readers for launcher and input-source-switching shortcuts. Thin
 domain wrappers over toshy_common.shortcut_detect mechanics.
 """
-__version__ = '20260805'
+__version__ = '20260831'
 
 from toshy_common.logger import error
 from toshy_common.shortcut_detect import (
@@ -46,11 +46,14 @@ _KDE_KRUNNER_ACTION_SLOT_DCT = {
 }
 
 
-def read_kde() -> dict:
+def read_kde(de_maj_ver=None) -> dict:
+    """de_maj_ver is the Plasma major, needed for Qt 5 vs 6 key naming."""
     results_dct = read_kde_component(
-        _KDE_SWITCHER_SECTIONS_LST, _KDE_SWITCHER_ACTION_SLOT_DCT)
+        _KDE_SWITCHER_SECTIONS_LST, _KDE_SWITCHER_ACTION_SLOT_DCT,
+        plasma_maj_ver=de_maj_ver)
     results_dct.update(read_kde_component(
-        _KDE_KRUNNER_SECTIONS_LST, _KDE_KRUNNER_ACTION_SLOT_DCT))
+        _KDE_KRUNNER_SECTIONS_LST, _KDE_KRUNNER_ACTION_SLOT_DCT,
+        plasma_maj_ver=de_maj_ver))
     return results_dct
 
 
@@ -161,8 +164,8 @@ def read_cosmic() -> dict:
 
 
 READERS_DCT = {
-    'kde':      lambda ver: read_kde(),
-    'plasma':   lambda ver: read_kde(),
+    'kde':      read_kde,
+    'plasma':   read_kde,
     'gnome':    read_gnome,
     'cinnamon': lambda ver: read_cinnamon(),
     'cosmic':   lambda ver: read_cosmic(),

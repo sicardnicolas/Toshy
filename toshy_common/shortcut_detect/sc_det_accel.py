@@ -6,12 +6,13 @@ Accelerator normalization: converts DE-native accelerator strings (KDE
 Qt-style 'Meta+Shift+Print', GTK-style '<Control><Shift>Print') into
 xwaykeyz output combo strings with a canonical modifier spelling order.
 """
-__version__ = '20260803'
+__version__ = '20260831'
 
-from toshy_common.shortcut_detect.sc_det_accel_rgx import (
-    _rgx_gtk_mod_token,
-    _rgx_key_token_valid,
+from toshy_common.shortcut_detect.sc_det_keynames import (
+    keyname_from_kde_name,
+    keyname_from_keysym,
 )
+from toshy_common.shortcut_detect.sc_det_accel_rgx import _rgx_gtk_mod_token
 
 
 # Canonical modifier emission order for output combo strings, following
@@ -48,29 +49,24 @@ _GTK_MOD_XLAT_DCT = {
     'mod4':     'Super',
 }
 
-# Minor key name translations where DE naming differs from xwaykeyz.
-_KEY_NAME_XLAT_DCT = {
-    'Return':   'Enter',
-    'Escape':   'Esc',
-    'Super_L':  'Super',
-    'Super_R':  'RSuper',
-}
-
-
 def _canonical_combo(mods_lst: 'list[str]', key_name: str) -> str:
     """Assemble a normalized combo string with deterministic modifier order."""
     ordered_mods_lst = [mod for mod in _MOD_ORDER_LST if mod in mods_lst]
     return '-'.join(ordered_mods_lst + [key_name])
 
 
-def normalize_kde_accel(accel_str: str) -> 'str | None':
+def normalize_kde_accel(accel_str: str, plasma_maj_ver=None) -> 'str | None':
     """Convert a KDE accelerator like 'Meta+Shift+Print' to 'Shift-Super-Print'.
 
-    Returns None if the accelerator cannot be represented (unknown modifier,
-    multi-word key name, empty input)."""
+    plasma_maj_ver selects Qt 5 vs Qt 6 naming for the 'Launch (X)' keys
+    (see sc_det_keynames). Returns None if the accelerator cannot be
+    represented (unknown modifier, key name with no known xwaykeyz Key,
+    empty input)."""
     if not accel_str:
         return None
 
+    # Qt writes a literal '+' key as a trailing '+' ('Ctrl++'); it is a
+    # shifted character with no single Key to emit, so it stays None.
     parts_lst = [part.strip() for part in accel_str.split('+')]
     if any(not part for part in parts_lst):
         return None
@@ -92,8 +88,8 @@ def normalize_kde_accel(accel_str: str) -> 'str | None':
     if key_as_mod is not None:
         key_name = key_as_mod
     else:
-        key_name = _KEY_NAME_XLAT_DCT.get(key_name, key_name)
-        if not _rgx_key_token_valid.match(key_name):
+        key_name = keyname_from_kde_name(key_name, plasma_maj_ver)
+        if key_name is None:
             return None
 
     return _canonical_combo(mods_lst, key_name)
@@ -117,8 +113,8 @@ def normalize_gtk_accel(accel_str: str) -> 'str | None':
         if xlat_mod not in mods_lst:
             mods_lst.append(xlat_mod)
 
-    key_name = _KEY_NAME_XLAT_DCT.get(key_name, key_name)
-    if not _rgx_key_token_valid.match(key_name):
+    key_name = keyname_from_keysym(key_name)
+    if key_name is None:
         return None
 
     return _canonical_combo(mods_lst, key_name)

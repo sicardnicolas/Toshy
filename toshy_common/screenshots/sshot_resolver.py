@@ -27,7 +27,7 @@ Typical config-side usage (see screenshot_shortcuts_config_example.py):
     # then inside the GenGUI overrides keymap:
     # **{C(in_combo): C(out_combo) for in_combo, out_combo in entries_dct.items()},
 """
-__version__ = '20260803'
+__version__ = '20260831'
 
 
 from toshy_common.logger import debug
@@ -40,6 +40,7 @@ from toshy_common.shortcut_detect import (
     SlotResult,
     log_resolution,
     resolve_slot_tiers,
+    validate_combos,
 )
 from toshy_common.shortcut_detect.sc_det_accel_rgx import _rgx_combo_valid
 from toshy_common.screenshots.sshot_defaults import (
@@ -111,7 +112,7 @@ def clear_custom_outputs():
 
 def _run_reader(desktop_env_str: str, de_maj_ver: 'int | None') -> dict:
     if desktop_env_str in ('kde', 'plasma'):
-        return read_kde()
+        return read_kde(de_maj_ver)
     if desktop_env_str == 'gnome':
         return read_gnome(de_maj_ver)
     if desktop_env_str == 'budgie':
@@ -153,8 +154,13 @@ def _coerce_maj_ver(de_maj_ver) -> 'int | None':
     return None
 
 
-def resolve_outputs(desktop_env: str, de_maj_ver=None) -> dict:
+def resolve_outputs(desktop_env: str, de_maj_ver=None, combo_fn=None) -> dict:
     """Resolve all slots for the given desktop environment.
+
+    combo_fn: the keymapper's combo parser (C), when the caller has it.
+    Every resolved combo is run through it and downgraded to unresolved
+    (loudly) if the keymapper rejects the string, so the resolution log
+    below reflects what will actually be emitted.
 
     Returns a dict mapping every slot name to a SlotResult. Callers should
     only emit combos for slots with status STATUS_RESOLVED."""
@@ -175,6 +181,9 @@ def resolve_outputs(desktop_env: str, de_maj_ver=None) -> dict:
         else:
             results_dct[slot_name] = SlotResult(
                 STATUS_RESOLVED, combo=custom_combo, source=SOURCE_USER_OVERRIDE)
+
+    if combo_fn is not None:
+        validate_combos(results_dct, combo_fn, 'SSHOT')
 
     log_resolution('SSHOT',
                     f"Screenshot shortcuts for '{desktop_env_str or 'unknown DE'}'",

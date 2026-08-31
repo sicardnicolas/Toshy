@@ -32,7 +32,7 @@ Typical config usage (the entire config-side footprint):
 
     setup_screenshot_keymaps(globals(), when = lambda ctx: ...)
 """
-__version__ = '20260804'
+__version__ = '20260831'
 
 
 from toshy_common.logger import debug
@@ -50,6 +50,7 @@ from toshy_common.screenshots.sshot_defaults import (
 from toshy_common.shortcut_detect import (
     STATUS_RESOLVED,
     make_cmd_fallback_fn,
+    validate_combos,
 )
 from toshy_common.screenshots.sshot_resolver import resolve_outputs
 
@@ -174,7 +175,10 @@ def setup_screenshot_keymaps(config_globals_dct: dict, *, when=None,
         input_combos_dct = DEFAULT_INPUT_COMBOS_DCT
 
     if results_dct is None:
-        results_dct = resolve_outputs(desktop_env, de_maj_ver)
+        results_dct = resolve_outputs(desktop_env, de_maj_ver, combo_fn=C)
+    else:
+        # Pre-resolved results (diagnostics path) have not met C() yet.
+        validate_combos(results_dct, C, 'SSHOT')
 
     def _resolved_combo(slot_name: str) -> 'str | None':
         result = results_dct.get(slot_name)

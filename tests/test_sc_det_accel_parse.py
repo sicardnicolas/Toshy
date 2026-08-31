@@ -8,7 +8,7 @@ Focused tests for the shortcut_detect package: accelerator normalization
 Runnable standalone (accumulates a score in main) and collectable by
 pytest (bool-returning test functions).
 """
-__version__ = '20260803'
+__version__ = '20260831'
 
 
 import os
@@ -61,7 +61,9 @@ def test_kde_accel_normalization() -> bool:
         ('Ctrl+Alt+T',                  'C-Alt-T'),
         ('Meta+Shift+S',                'Shift-Super-S'),
         ('Meta',                        'Super'),           # modifier-only shortcut
-        ('Volume Down',                 None),              # multi-word key name
+        ('Volume Down',                 'VolumeDown'),      # Qt multi-word key name
+        ('Meta+Shift+Launch (9)',       'Shift-Super-F18'), # Qt 6 Launch numbering
+        ('Meta+Unknown Thing',          None),              # no known Key
         ('Bogus+Print',                 None),              # unknown modifier
         ('',                            None),
     ]
@@ -77,7 +79,9 @@ def test_gtk_accel_normalization() -> bool:
         ('<Primary>Print',              'C-Print'),
         ('<Ctrl><Alt>Print',            'C-Alt-Print'),
         ('<Super>p',                    'Super-p'),
-        ('XF86MonBrightnessUp',         'XF86MonBrightnessUp'),
+        ('XF86MonBrightnessUp',         'BrightnessUp'),
+        ('<Shift>Launch9',              'Shift-F18'),       # reported ThinkPad crash case
+        ('<Super>NoSuchKey',            None),
         ('<Bogus>Print',                None),
         ('',                            None),
     ]
